@@ -1,0 +1,31 @@
+{
+  "joystick": {
+    "x_axis": "ABS_X",
+    "y_axis": "ABS_Y",
+    "center": 511,
+    "deadzone": 100,
+    "sensitivity": 0.05,
+    "poll_interval": 0.01,
+    "invert_y": true
+  },
+  "throttle": {
+    "axis": "ABS_Z",
+    "increase_key": "KEY_SPACE",
+    "decrease_key": "KEY_LEFTSHIFT",
+    "change_threshold": 10,
+    "press_duration_multiplier": 0.01,
+    "max_threshold": 950,
+    "min_threshold": 100
+  },
+    "rudder": {
+    "axis": "ABS_RZ",
+    "left_key": "KEY_Q",
+    "right_key": "KEY_E",
+    "deadzone": 100,
+    "sensitivity": 0.01,
+    "poll_interval": 0.01,
+    "change_threshold": 20,
+    "press_duration_multiplier": 0.001
+  },
+    "toggle_key": "BTN_TRIGGER_HAPPY15"
+}
