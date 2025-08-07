@@ -1,6 +1,6 @@
 # X52 Pro Joystick to Mouse & Throttle Mapper
 
-A Linux utility that maps Saitek X52 Pro HOTAS joystick axis inputs to mouse movement and throttle controls to keyboard keys for games that do not natively support joysticks.
+A Linux utility that maps Saitek X52 Pro HOTAS joystick axis inputs to mouse movement and throttle controls to keyboard keys for games that do not natively support joysticks. The project is still a work in progress so please be aware of that.
 
 ---
 
