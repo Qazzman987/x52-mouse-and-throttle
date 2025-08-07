@@ -32,7 +32,7 @@ A Linux utility that maps Saitek X52 Pro HOTAS joystick axis inputs to mouse mov
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/yourusername/x52-mouse-and-throttle.git
+git clone https://github.com/Qazzman987/x52-mouse-and-throttle.git
 cd x52-mouse-and-throttle
 ```
 
