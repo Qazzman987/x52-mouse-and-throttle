@@ -15,7 +15,7 @@ CENTER = joystick_cfg["center"]
 DEADZONE = joystick_cfg["deadzone"]
 SENSITIVITY = joystick_cfg["sensitivity"]
 POLL_INTERVAL = joystick_cfg["poll_interval"]
-INVERT_Y = joystick_cfg.get("invert_y", False)
+INVERT_Y = joystick_cfg.get("invert_y", False) 
 
 # Set config constants for throttle
 throttle_cfg = config["throttle"]
@@ -39,7 +39,7 @@ RUDDER_POLL_INTERVAL = rudder_cfg.get("poll_interval", 0.01)
 
 TOGGLE_KEY = getattr(ecodes, config.get("toggle_key", "BTN_TRIGGER_HAPPY15"))
 
-enabled = True  # Start enabled
+enabled = False  # Start enabled
 
 # Check if we need to invert y movement
 modiferY = 1
@@ -103,7 +103,7 @@ async def mover():
         dy = axis_state[AXIS_Y] - CENTER
 
         if abs(dx) > DEADZONE:
-            ui.write(ecodes.EV_REL, ecodes.REL_X, int(dx * SENSITIVITY))
+            ui.write(ecodes.EV_REL, ecodes.REL_X, int(dx * SENSITIVITY)) 
         if abs(dy) > DEADZONE:
             ui.write(ecodes.EV_REL, ecodes.REL_Y, int(dy * SENSITIVITY * modiferY))
 
@@ -111,81 +111,77 @@ async def mover():
         await asyncio.sleep(POLL_INTERVAL)
 
 last_throttle_value = 1023
-increase_held = False
-decrease_held = False
+last_throttle_zone = None  # "max", "min", "middle"
 
 async def throttle_handler():
-    global last_throttle_value, increase_held, decrease_held
-    
+    global last_throttle_value, last_throttle_zone
+
     while True:
         if not enabled:
             await asyncio.sleep(POLL_INTERVAL)
             continue
 
+        # Get current throttle value
         raw_value = axis_state[AXIS_Z]
-        current_value = 1023 - raw_value  # Inverted
+
+        # inversion 
+        if throttle_cfg.get("invert", True):  # default True since many throttles are reversed
+            current_value = 1023 - raw_value
+        else:
+            current_value = raw_value
+
         dz = current_value - last_throttle_value
 
-        # --- Handle max throttle ---
-        if current_value >= MAX_THRESHOLD:
-            if not increase_held:
-                print("Throttle MAX — Holding INCREASE key")
+        # Zone detection
+        if current_value >= (MAX_THRESHOLD):
+            zone = "max"
+        elif current_value <= (1023 - MIN_THRESHOLD):
+            zone = "min"
+        else:
+            zone = "middle"
+
+        if zone != last_throttle_zone:
+            # Release any keys before changing zone
+            ui.write(ecodes.EV_KEY, INCREASE_KEY, 0)
+            ui.write(ecodes.EV_KEY, DECREASE_KEY, 0)
+            ui.syn()
+
+            if zone == "max":
+                print(f"Throttle at MAX ({current_value}) - holding increase key")
                 ui.write(ecodes.EV_KEY, INCREASE_KEY, 1)
                 ui.syn()
-                increase_held = True
-            if decrease_held:
-                print("Releasing DECREASE key")
-                ui.write(ecodes.EV_KEY, DECREASE_KEY, 0)
-                ui.syn()
-                decrease_held = False
-
-        # --- Handle min throttle ---
-        elif current_value <= MIN_THRESHOLD:
-            if not decrease_held:
-                print("Throttle MIN — Holding DECREASE key")
+            elif zone == "min":
+                print(f"Throttle at MIN ({current_value}) - holding decrease key")
                 ui.write(ecodes.EV_KEY, DECREASE_KEY, 1)
                 ui.syn()
-                decrease_held = True
-            if increase_held:
-                print("Releasing INCREASE key")
-                ui.write(ecodes.EV_KEY, INCREASE_KEY, 0)
-                ui.syn()
-                increase_held = False
 
-        # --- Handle intermediate movement ---
-        elif abs(dz) > THROTTLE_CHANGE_THRESHOLD:
-            if increase_held:
-                print("Releasing INCREASE key (leaving max zone)")
-                ui.write(ecodes.EV_KEY, INCREASE_KEY, 0)
-                ui.syn()
-                increase_held = False
-            if decrease_held:
-                print("Releasing DECREASE key (leaving min zone)")
-                ui.write(ecodes.EV_KEY, DECREASE_KEY, 0)
-                ui.syn()
-                decrease_held = False
+            last_throttle_zone = zone
 
-            if dz > 0:
-                duration = dz * PRESS_DURATION_MULTIPLIER
-                print(f"Increasing Throttle ({duration:.2f}s)")
-                ui.write(ecodes.EV_KEY, INCREASE_KEY, 1)
-                ui.syn()
-                await asyncio.sleep(duration)
-                ui.write(ecodes.EV_KEY, INCREASE_KEY, 0)
-                ui.syn()
-            else:
-                duration = -dz * PRESS_DURATION_MULTIPLIER
-                print(f"Decreasing Throttle ({duration:.2f}s)")
-                ui.write(ecodes.EV_KEY, DECREASE_KEY, 1)
-                ui.syn()
-                await asyncio.sleep(duration)
-                ui.write(ecodes.EV_KEY, DECREASE_KEY, 0)
-                ui.syn()
+        elif zone == "middle":
+            # In middle zone tap proportionally if change is big enough
+            if abs(dz) > THROTTLE_CHANGE_THRESHOLD:
+                if dz > 0:
+                    duration = dz * PRESS_DURATION_MULTIPLIER
+                    print(f"Increasing Throttle ({duration:.2f}s)")
+                    ui.write(ecodes.EV_KEY, INCREASE_KEY, 1)
+                    ui.syn()
+                    await asyncio.sleep(duration)
+                    ui.write(ecodes.EV_KEY, INCREASE_KEY, 0)
+                    ui.syn()
+                else:
+                    duration = -dz * PRESS_DURATION_MULTIPLIER
+                    print(f"Decreasing Throttle ({duration:.2f}s)")
+                    ui.write(ecodes.EV_KEY, DECREASE_KEY, 1)
+                    ui.syn()
+                    await asyncio.sleep(duration)
+                    ui.write(ecodes.EV_KEY, DECREASE_KEY, 0)
+                    ui.syn()
 
         last_throttle_value = current_value
         await asyncio.sleep(POLL_INTERVAL)
 
-last_rudder_value = 0 
+
+last_rudder_value = CENTER  
 rudder_active = False
 
 last_rudder_direction = 0  # -1 = left, 0 = center, 1 = right
