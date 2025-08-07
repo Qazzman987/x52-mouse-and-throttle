@@ -14,8 +14,9 @@
     "decrease_key": "KEY_LEFTSHIFT",
     "change_threshold": 10,
     "press_duration_multiplier": 0.01,
-    "max_threshold": 950,
-    "min_threshold": 100
+    "max_threshold": 821,
+    "min_threshold": 202,
+    "invert": true
   },
     "rudder": {
     "axis": "ABS_RZ",
