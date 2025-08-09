@@ -35,7 +35,7 @@ RIGHT_KEY = getattr(ecodes, rudder_cfg.get("right_key", "KEY_E"))
 RUDDER_DEADZONE = rudder_cfg.get("deadzone", 100)
 RUDDER_CHANGE_THRESHOLD = rudder_cfg.get("change_threshold", 20)
 RUDDER_PRESS_DURATION_MULTIPLIER = rudder_cfg.get("press_duration_multiplier", 0.01)
-RUDDER_POLL_INTERVAL = rudder_cfg.get("poll_interval", 0.01)
+
 
 TOGGLE_KEY = getattr(ecodes, config.get("toggle_key", "BTN_TRIGGER_HAPPY15"))
 
@@ -74,8 +74,8 @@ ui = UInput(capabilities, name="X52 Virtual Mouse + Throttle")
 axis_state = {
     AXIS_X: CENTER,
     AXIS_Y: CENTER,
-    AXIS_Z: 0,
-    AXIS_RUDDER: 0
+    AXIS_Z: 128,
+    AXIS_RUDDER: CENTER
 }
 
 async def reader():
@@ -110,8 +110,9 @@ async def mover():
         ui.syn()
         await asyncio.sleep(POLL_INTERVAL)
 
-last_throttle_value = 1023
-last_throttle_zone = None  # "max", "min", "middle"
+#Throttle Range 0-255
+last_throttle_value = 128
+last_throttle_zone = None  # "max", "min", "middle"  
 
 async def throttle_handler():
     global last_throttle_value, last_throttle_zone
@@ -126,16 +127,16 @@ async def throttle_handler():
 
         # inversion 
         if throttle_cfg.get("invert", True):  # default True since many throttles are reversed
-            current_value = 1023 - raw_value
+            current_value = 255 - raw_value
         else:
             current_value = raw_value
 
         dz = current_value - last_throttle_value
 
         # Zone detection
-        if current_value >= (MAX_THRESHOLD):
+        if current_value >= MAX_THRESHOLD:
             zone = "max"
-        elif current_value <= (1023 - MIN_THRESHOLD):
+        elif current_value <= MIN_THRESHOLD:
             zone = "min"
         else:
             zone = "middle"
@@ -159,6 +160,8 @@ async def throttle_handler():
 
         elif zone == "middle":
             # In middle zone tap proportionally if change is big enough
+            ui.write(ecodes.EV_KEY, INCREASE_KEY, 0)
+            ui.write(ecodes.EV_KEY, DECREASE_KEY, 0) 
             if abs(dz) > THROTTLE_CHANGE_THRESHOLD:
                 if dz > 0:
                     duration = dz * PRESS_DURATION_MULTIPLIER
@@ -189,8 +192,8 @@ last_rudder_direction = 0  # -1 = left, 0 = center, 1 = right
 async def rudder_handler():
     global last_rudder_direction
     while True:
-
         if not enabled:
+            
             await asyncio.sleep(POLL_INTERVAL)
             continue
 
@@ -216,14 +219,13 @@ async def rudder_handler():
                 last_rudder_direction = 1
         else:
             # Center release both keys if any held
-            if last_rudder_direction == -1:
-                ui.write(ecodes.EV_KEY, LEFT_KEY, 0)
-            elif last_rudder_direction == 1:
+            if last_rudder_direction != 0:
                 ui.write(ecodes.EV_KEY, RIGHT_KEY, 0)
+                ui.write(ecodes.EV_KEY, LEFT_KEY, 0)
             ui.syn()
             last_rudder_direction = 0
 
-        await asyncio.sleep(RUDDER_POLL_INTERVAL)
+        await asyncio.sleep(POLL_INTERVAL)
 
 async def main():
     await asyncio.gather(reader(), mover(), throttle_handler(), rudder_handler())
