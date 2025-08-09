@@ -4,7 +4,7 @@
     "y_axis": "ABS_Y",
     "center": 511,
     "deadzone": 100,
-    "sensitivity": 0.05,
+    "sensitivity": 0.01,
     "poll_interval": 0.01,
     "invert_y": true
   },
@@ -12,10 +12,10 @@
     "axis": "ABS_Z",
     "increase_key": "KEY_SPACE",
     "decrease_key": "KEY_LEFTSHIFT",
-    "change_threshold": 10,
+    "change_threshold": 1,
     "press_duration_multiplier": 0.01,
-    "max_threshold": 821,
-    "min_threshold": 202,
+    "max_threshold": 185,
+    "min_threshold": 70,
     "invert": true
   },
     "rudder": {
@@ -24,7 +24,6 @@
     "right_key": "KEY_E",
     "deadzone": 100,
     "sensitivity": 0.01,
-    "poll_interval": 0.01,
     "change_threshold": 20,
     "press_duration_multiplier": 0.001
   },
